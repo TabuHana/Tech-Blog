@@ -2,11 +2,9 @@ require('dotenv').config()
 
 const express = require('express')
 const { join } = require('path')
-
 const passport = require('passport')
-const { User, Post, Note } = require('./models')
-const { Strategy: JWTStrategy, ExtractJwt } = require('passport-jwt')
-
+const { User } = require('./models')
+const { Strategy: JWTStrategy, ExtractJwt } = requir('passport-jwt')
 const app = express()
 
 app.use(express.static(join(__dirname, 'public')))
@@ -18,8 +16,14 @@ app.use(passport.session())
 
 passport.use(User.createStrategy())
 
-passport.serializeUser(User.serializeUser())
-passport.deserializeUser(User.deserializeUser())
+passport.serializeUser((user, done) => {
+  done(null, user.id)
+})
+passport.deserializeUser((id, done) => {
+  User.findOne({ id })
+  .then(user => done(null, user))
+  .catch(err => done(err, null))
+})
 
 passport.use(new JWTStrategy({
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -34,6 +38,7 @@ passport.use(new JWTStrategy({
 }))
 
 app.use(require('./routes'))
+
 
 async function init () {
   await require('./db').sync()
