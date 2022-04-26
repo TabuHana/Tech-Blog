@@ -28,5 +28,3 @@ router.post('/users/login', (req, res) => {
 router.get('/users/profile', passport.authenticate('jwt'), (req, res) => res.json(req.user))
 
 module.exports = router
-
-
