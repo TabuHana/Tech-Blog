@@ -1,47 +1,36 @@
-require('dotenv').config()
+require('dotenv').config();
+const express = require('express');
+const session = require('express-session');
+const { join } = require('path');
+const { sequelize } = require('./models/User');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
-const express = require('express')
-const { join } = require('path')
-const passport = require('passport')
-const { User, Post } = require('./models')
-const { Strategy: JWTStrategy, ExtractJwt } = require('passport-jwt')
 const app = express()
+
+const sess = {
+  secret: 'Super secret secret',
+  cookie: {
+    maxAge: 3600,
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+  },
+  resave: false,
+  saveUninitialized: true,
+  store: new SequelizeStore({
+    db: sequelize,
+  }),
+};
+app.use(session(sess));
 
 app.use(express.static(join(__dirname, 'public')))
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
-app.use(passport.initialize())
-app.use(passport.session())
-
-passport.use(User.createStrategy())
-passport.serializeUser((user, done) => {
-  done(null, user.id)
-})
-
-passport.deserializeUser((id, done) => {
-  User.findOne({ id })
-  .then(user => done(null, user))
-  .catch(err => done(err, null))
-})
-
-passport.use(new JWTStrategy({
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.SECRET
-}, async function ({ id }, cb) {
-  try {
-    const user = await User.findOne({ where: { id }, include: [Post] })
-    cb(null, user)
-  } catch (err) {
-    cb(err, null)
-  }
-}))
-
 app.use(require('./routes'))
 
-
-async function init () {
-  await require('./db').sync()
+async function init() {
+  await require('./config').sync()
   app.listen(process.env.PORT || 3000)
 }
 

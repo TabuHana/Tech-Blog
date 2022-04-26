@@ -45,7 +45,6 @@ User.init({
       }
       return updatedUserData
     }
-  },
-  { sequelize,  modelName: 'user' })
+  }, sequelize,  modelName: 'user' })
 
 module.exports = User
